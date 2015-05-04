@@ -1,5 +1,3 @@
-#include <Time.h>
-#include <TimeAlarms.h>
 
 int pumpPin1 = 2; //Sets pin values for motors
 int pumpPin2 = 3;
@@ -19,12 +17,14 @@ int pumpPin6 = 7;
 int pumpPins [ PUMP_COUNT ] = { 2, 3, 4, 5, 6, 7 };
 int pumpRunningTime [ PUMP_COUNT ] = { 0 };
 
+IntervalTimer botTimer;
+
 void setup() {
   for ( int i = 0; i < PUMP_COUNT; i ++) {
     pinMode(pumpPins [ i ], OUTPUT);
   }
   
-  Alarm.timerRepeat(1, OneSecondTimer);
+  botTimer.begin(OneSecondTimer, 1000000);
 
   Serial.begin(9600);
 }
@@ -42,14 +42,12 @@ void turnOffPump ( int pumpID ) {
 }
 
 void OneSecondTimer () {
-
-  Serial.println ( "In the timer routine ... " );
   
   for ( int i = 0; i < PUMP_COUNT; i ++ ) {
-  
-    pumpRunningTime [ i ] --;
     
-    if ( pumpRunningTime == 0 ) {
+    pumpRunningTime [ i ] -= 1;
+    
+    if ( pumpRunningTime [ i ] == 0 ) {
       turnOffPump ( i );
     }
     
@@ -72,11 +70,10 @@ void pourTime(int pump1, int pump2, int pump3, int pump4, int pump5, int pump6) 
 
 void loop()
 {
-  pourTime(1, 2, 3, 4, 5, 1);
+  pourTime(1, 2, 3, 4, 5, 6);
   
   Serial.println ( "All pumps are turned on .. going for the delay now" );
-  Alarm.delay ( 1 );
   
   delay ( 10000 );
 }
- 
+
