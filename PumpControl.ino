@@ -1,6 +1,3 @@
-#define USING_TEENSY_PLUS_PLUS_2_0  1
-//#define USING_TEENSY_3_0  1
-
 #define PUMP_1  0
 #define PUMP_2  1
 #define PUMP_3  2
@@ -9,15 +6,10 @@
 #define PUMP_6  5
 
 #define PUMP_COUNT 6
-int pumpPins [ PUMP_COUNT ] = { 38, 39, 40, 41, 42, 43 };
+int pumpPins [ PUMP_COUNT ] = { 18, 19, 20, 21, 22, 23 };
 int pumpRunningTime [ PUMP_COUNT ] = { 0 };
 
-#if defined (USING_TEENSY_3_0)
-  IntervalTimer botTimer;
-#endif
-#if defined ( USING_TEENSY_PLUS_PLUS_2_0 )
-  #include <TimerOne.h>
-#endif
+IntervalTimer botTimer;
 
 void setupPumpConroller () {
 
@@ -25,13 +17,6 @@ void setupPumpConroller () {
     pinMode ( pumpPins [ i ], OUTPUT );
   }
   
-#if defined (USING_TEENSY_3_0)
-  botTimer.begin ( OneSecondTimer, 1000000 );
-#endif
-
-#if defined ( USING_TEENSY_PLUS_PLUS_2_0 )
-  Timer1.initialize ( 1000000 );
-#endif
 }
 
 void runPump ( int pumpID, int timeInSecs ) {
@@ -63,11 +48,8 @@ void OneSecondTimer () {
 }
 
 void pourTime ( int pump1, int pump2, int pump3, int pump4, int pump5, int pump6 ) {
-
-#if defined ( USING_TEENSY_PLUS_PLUS_2_0 )
-  Timer1.stop();
-  Timer1.detachInterrupt();
-#endif
+  
+  botTimer.end ();
 
   runPump ( PUMP_1, pump1 );
   runPump ( PUMP_2, pump2 );
@@ -75,12 +57,8 @@ void pourTime ( int pump1, int pump2, int pump3, int pump4, int pump5, int pump6
   runPump ( PUMP_4, pump4 );
   runPump ( PUMP_5, pump5 );
   runPump ( PUMP_6, pump6 );
-  
-#if defined ( USING_TEENSY_PLUS_PLUS_2_0 )
-  Timer1.attachInterrupt ( OneSecondTimer );
-  Timer1.resume();
-#endif
 
+  botTimer.begin ( OneSecondTimer, 1000000 );
 }
 
 elapsedMillis millisSinceLastRun = 0;

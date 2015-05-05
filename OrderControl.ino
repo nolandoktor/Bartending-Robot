@@ -1,10 +1,9 @@
 #include <BarvizQueue.h>
 
-#define NUMBER_OF_BUTTONS  12
+#define NUMBER_OF_BUTTONS  8
+#define ORDER_QUEUE_SIZE   4
 
-#define ORDER_QUEUE_SIZE  4
-
-const int buttonPins [ NUMBER_OF_BUTTONS ] = { 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 44, 45 };
+const int buttonPins [ NUMBER_OF_BUTTONS ] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 typedef struct {
   int orderIndex;
@@ -13,7 +12,9 @@ typedef struct {
 } Order;
 
 String Order :: toString () {
-  return " Testing";
+  String str = "";
+  str += orderIndex;
+  return str;
 }
 
 BarvizQueue <Order> orderQue ( ORDER_QUEUE_SIZE );
@@ -51,9 +52,9 @@ void menuButtonPinChanged () {
         }
       }
     }
+  
+    millisSinceInterrupt = 0;
   }
-
-  millisSinceInterrupt = 0;
 }
 
 int previousQueueSize = -1;
