@@ -1,0 +1,21 @@
+#######################################
+# Syntax Coloring Map For BarvizQueue
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+BarvizQueue	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+add	KEYWORD2
+remove	KEYWORD2
+peek	KEYWORD2
+removeMostRecent	KEYWORD2
+isEmpty	KEYWORD2
+isFull	KEYWORD2
+size	KEYQORD2
