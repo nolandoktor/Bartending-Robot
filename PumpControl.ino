@@ -1,11 +1,3 @@
-
-int pumpPin1 = 2; //Sets pin values for motors
-int pumpPin2 = 3;
-int pumpPin3 = 4;
-int pumpPin4 = 5;
-int pumpPin5 = 6;
-int pumpPin6 = 7;
-
 #define PUMP_1  0
 #define PUMP_2  1
 #define PUMP_3  2
@@ -19,7 +11,7 @@ int pumpRunningTime [ PUMP_COUNT ] = { 0 };
 
 IntervalTimer botTimer;
 
-void setup() {
+void setupPumpConroller () {
   for ( int i = 0; i < PUMP_COUNT; i ++) {
     pinMode(pumpPins [ i ], OUTPUT);
   }
@@ -66,14 +58,5 @@ void pourTime(int pump1, int pump2, int pump3, int pump4, int pump5, int pump6) 
   runPump ( PUMP_5, pump5 );
   runPump ( PUMP_6, pump6 );
   
-}
-
-void loop()
-{
-  pourTime(1, 2, 3, 4, 5, 6);
-  
-  Serial.println ( "All pumps are turned on .. going for the delay now" );
-  
-  delay ( 10000 );
 }
 

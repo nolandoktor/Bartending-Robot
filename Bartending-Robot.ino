@@ -31,6 +31,8 @@ void setup() {
     pinMode ( buttonPins [ i ], INPUT_PULLUP );
     attachInterrupt ( buttonPins [ i ], pinChanged, CHANGE );
   }
+  
+  setupPumpConroller ();
 
   // Debug LED setup
 #if defined( USE_DEBUG_LED )
