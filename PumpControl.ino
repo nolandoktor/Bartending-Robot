@@ -12,13 +12,12 @@ int pumpRunningTime [ PUMP_COUNT ] = { 0 };
 IntervalTimer botTimer;
 
 void setupPumpConroller () {
+
   for ( int i = 0; i < PUMP_COUNT; i ++) {
-    pinMode(pumpPins [ i ], OUTPUT);
+    pinMode ( pumpPins [ i ], OUTPUT );
   }
   
-  botTimer.begin(OneSecondTimer, 1000000);
-
-  Serial.begin(9600);
+  botTimer.begin ( OneSecondTimer, 1000000 );
 }
 
 void runPump ( int pumpID, int timeInSecs ) {
@@ -49,7 +48,7 @@ void OneSecondTimer () {
   }
 }
 
-void pourTime(int pump1, int pump2, int pump3, int pump4, int pump5, int pump6) {
+void pourTime ( int pump1, int pump2, int pump3, int pump4, int pump5, int pump6 ) {
 
   runPump ( PUMP_1, pump1 );
   runPump ( PUMP_2, pump2 );
@@ -59,4 +58,5 @@ void pourTime(int pump1, int pump2, int pump3, int pump4, int pump5, int pump6) 
   runPump ( PUMP_6, pump6 );
   
 }
+
 
