@@ -1,13 +1,12 @@
-#include <BarvizQueue.h>
-
 // comment the following define statement to shut the built-in LED off
-#define USE_DEBUG_LED 1
+#define USE_DEBUG_LED      1
 
 // Comment the following to skip Serial Port Setup
-#define SOFTWARE_DEBUG 1
+#define SOFTWARE_DEBUG     1
 
-#define PUMP_COUNT 6
+#define PUMP_COUNT         6
 #define ORDER_QUEUE_SIZE   4
+#define CUP_POSITIONS      ORDER_QUEUE_SIZE
 
 #if defined( USE_DEBUG_LED )
   IntervalTimer debugLedTimer;
@@ -30,6 +29,7 @@ void setup() {
 
   setupPumpConroller ();
   setupOrderController ();
+  setupCupController ();
 }
 
 #if defined( USE_DEBUG_LED )
@@ -55,6 +55,8 @@ void loop() {
       orderProcessed ();
     }
   }
+  
+  markCupEmpty ( 0 );
   
   orderControlDemo ();
 //  pumpControlDemo ();
