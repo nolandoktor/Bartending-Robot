@@ -6,11 +6,19 @@
 // Comment the following to skip Serial Port Setup
 #define SOFTWARE_DEBUG 1
 
+#define PUMP_COUNT 6
+#define ORDER_QUEUE_SIZE   4
+
+#if defined( USE_DEBUG_LED )
+  IntervalTimer debugLedTimer;
+#endif
+
 void setup() {
   
   // Debug LED setup
 #if defined( USE_DEBUG_LED )
   pinMode ( LED_BUILTIN, OUTPUT );
+  debugLedTimer.begin ( debugLedTimerRoutine, 250000 );
 #endif
   
 #if defined( SOFTWARE_DEBUG )
@@ -23,18 +31,25 @@ void setup() {
 }
 
 #if defined( USE_DEBUG_LED )
-bool builtInLedState = HIGH;
+  bool builtInLedState = HIGH;
+  
+  void debugLedTimerRoutine () {
+    builtInLedState = !builtInLedState;
+    digitalWrite ( LED_BUILTIN, builtInLedState );
+  }
 #endif
+
+void executeRecipie ( const int recipie [] ) {
+  runPumpsFor ( PUMP_COUNT, recipie );
+}
 
 void loop() {
 
-  orderControlMainRoutine ();
-  pumpControlMainRoutine ();
+  if ( runningPumpsCount () == 0 ) {
+    processOrder ();
+  }
 
-#if defined( USE_DEBUG_LED )
-  builtInLedState = !builtInLedState;
-  digitalWrite ( LED_BUILTIN, builtInLedState );
-  delay ( 250 );
-#endif
+  orderControlDemo ();
+//  pumpControlDemo ();
 
 }

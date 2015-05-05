@@ -5,7 +5,6 @@
 #define PUMP_5  4
 #define PUMP_6  5
 
-#define PUMP_COUNT 6
 int pumpPins [ PUMP_COUNT ] = { 18, 19, 20, 21, 22, 23 };
 int pumpRunningTime [ PUMP_COUNT ] = { 0 };
 
@@ -15,8 +14,8 @@ void setupPumpConroller () {
 
   for ( int i = 0; i < PUMP_COUNT; i ++) {
     pinMode ( pumpPins [ i ], OUTPUT );
-  }
-  
+    turnOffPump ( i );
+  }  
 }
 
 void runPump ( int pumpID, int timeInSecs ) {
@@ -47,27 +46,46 @@ void OneSecondTimer () {
   }
 }
 
-void pourTime ( int pump1, int pump2, int pump3, int pump4, int pump5, int pump6 ) {
+int runningPumpsCount () {
+  int returnValue = 0;
+  
+  for ( int i = 0; i < PUMP_COUNT; i ++ ) {
+    if ( pumpRunningTime [ i ] > 0 ) {
+      returnValue ++;
+    }
+  }
+  
+  return returnValue;
+}
+
+void runPumpsFor ( int numberOfPumps, const int forSeconds [] ) {
   
   botTimer.end ();
-
-  runPump ( PUMP_1, pump1 );
-  runPump ( PUMP_2, pump2 );
-  runPump ( PUMP_3, pump3 );
-  runPump ( PUMP_4, pump4 );
-  runPump ( PUMP_5, pump5 );
-  runPump ( PUMP_6, pump6 );
+  
+  #if defined( SOFTWARE_DEBUG )
+    Serial.print ( "Running Pumps for: " );
+    for ( int i = 0; i < numberOfPumps; i ++ ) {
+      Serial.print ( forSeconds [ i ] );
+    }
+    Serial.println ( "." );
+  #endif
+  
+  for ( int i = 0; i < numberOfPumps; i ++ ) {
+    runPump ( i, forSeconds [ i ] );
+  }
 
   botTimer.begin ( OneSecondTimer, 1000000 );
 }
 
-elapsedMillis millisSinceLastRun = 0;
+elapsedMillis millisSinceLastDemoRun = 0;
 
-void pumpControlMainRoutine () {
+void pumpControlDemo () {
   
-  if ( millisSinceLastRun > 10000  ) {
-    pourTime ( 5, 2, 3, 4, 1, 6 );
-    millisSinceLastRun = 0;
+  int pumpTimes [] = { 1, 2, 3, 4, 5, 6 };
+  
+  if ( millisSinceLastDemoRun > 10000  ) {
+    runPumpsFor ( PUMP_COUNT, pumpTimes );
+    millisSinceLastDemoRun = 0;
   }
 }
 
