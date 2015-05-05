@@ -23,9 +23,6 @@ template <typename T> class BarvizQueue {
     bool isFull () const;
     int size () const;
     
-    void setPrinter (Print & p);
-    void print ();
-
   private:
     typedef struct Node {
       T * item;
@@ -145,7 +142,7 @@ template <typename T> T * BarvizQueue<T> :: removeMostRecent () {
     
     Node * ptr = this -> tail;
 
-    this -> tail = this -> tail -> next;
+    this -> tail = this -> tail -> prev;
     delete ptr;
     
     if ( this -> tail != NULL ) {
@@ -160,24 +157,6 @@ template <typename T> T * BarvizQueue<T> :: removeMostRecent () {
   
   return returnValue;
 }
-
-template <typename T> void BarvizQueue<T> :: setPrinter ( Print & p ) {
-  this -> printer = &p;
-}
-
-template <typename T> void BarvizQueue<T> :: print () {
-  if ( printer != NULL ) {
-    printer -> print ( "[ " );
-    for ( Node * ptr = this -> head; ptr != NULL; ptr = ptr -> next ) {
-      printer -> print ( ptr -> item -> toString () );
-      if ( ptr != this -> tail ) {
-        printer -> print ( ", " );
-      }
-    }
-    printer -> println ( " ]" );
-  }
-}
-
 
 #endif // _BARVIZ_QUEUE_H
 

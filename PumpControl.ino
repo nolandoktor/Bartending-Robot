@@ -23,11 +23,13 @@ void runPump ( int pumpID, int timeInSecs ) {
   if ( timeInSecs > 0 ) {
     digitalWrite ( pumpPins [ pumpID ], LOW );
     pumpRunningTime [ pumpID ] = timeInSecs;
+    globalPumpStatus |= ( 0x1 << pumpID ); 
   }
 }
 
 void turnOffPump ( int pumpID ) {
   digitalWrite ( pumpPins [ pumpID ], HIGH );
+  globalPumpStatus &= ~( 0x1 << pumpID ); 
 }
 
 void OneSecondTimer () {

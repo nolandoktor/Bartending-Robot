@@ -13,6 +13,8 @@
   IntervalTimer debugLedTimer;
 #endif
 
+volatile unsigned int globalPumpStatus = 0;
+
 void setup() {
   
   // Debug LED setup
@@ -36,19 +38,24 @@ void setup() {
   void debugLedTimerRoutine () {
     builtInLedState = !builtInLedState;
     digitalWrite ( LED_BUILTIN, builtInLedState );
+    
+    Serial.print ( "Current pump satus: " );
+    Serial.println ( globalPumpStatus );
   }
 #endif
 
-void executeRecipie ( const int recipie [] ) {
-  runPumpsFor ( PUMP_COUNT, recipie );
-}
-
 void loop() {
 
-  if ( runningPumpsCount () == 0 ) {
-    processOrder ();
-  }
+  if ( globalPumpStatus == 0 ) {
 
+    const int * recipie = getNextOrder ();
+    
+    if ( recipie != NULL ) {
+      runPumpsFor ( PUMP_COUNT, recipie );
+      orderProcessed ();
+    }
+  }
+  
   orderControlDemo ();
 //  pumpControlDemo ();
 

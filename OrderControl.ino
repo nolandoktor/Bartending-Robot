@@ -15,26 +15,26 @@ const int DRINK_RECIPIES [ NUMBER_OF_RECIPIES ] [ PUMP_COUNT ] = {
   { 0, 2, 5, 0, 1, 4 },
 };
 
-typedef struct {
-  int recipieIndex;
-  String toString ();
-} Order;
+//typedef struct {
+//  int recipieIndex;
+//  String toString ();
+//} Order;
+//
+//String Order :: toString () {
+//  String str = "Recipie #: ";
+//  str += recipieIndex;
+//  str += " { ";
+//  for ( int i = 0; i < PUMP_COUNT; i ++ ) {
+//    if ( i > 0 ) {
+//      str += ", ";
+//    }
+//    str += DRINK_RECIPIES [ recipieIndex ] [ i ];
+//  }
+//  str += " }";
+//  return str;
+//}
 
-String Order :: toString () {
-  String str = "Recipie #: ";
-  str += recipieIndex;
-  str += " { ";
-  for ( int i = 0; i < PUMP_COUNT; i ++ ) {
-    if ( i > 0 ) {
-      str += ", ";
-    }
-    str += DRINK_RECIPIES [ recipieIndex ] [ i ];
-  }
-  str += " }";
-  return str;
-}
-
-BarvizQueue <Order> orderQue ( ORDER_QUEUE_SIZE );
+BarvizQueue <int> orderQue ( ORDER_QUEUE_SIZE );
 
 void setupOrderController () {
   
@@ -46,10 +46,6 @@ void setupOrderController () {
   
   pinMode ( buttonPins [ NUMBER_OF_BUTTONS - 1 ], INPUT_PULLUP );
   attachInterrupt ( buttonPins [ i ], clearRecentRecipie, CHANGE );
-  
-  #if defined( SOFTWARE_DEBUG )
-    orderQue.setPrinter ( Serial );
-  #endif
 }
 
 #define BUTTON_SENSITIVITY_MILLIS  300
@@ -66,9 +62,7 @@ void menuButtonPinChanged () {
       
       if ( value == true ) {
         if ( !orderQue.isFull () ) {
-          Order * order = new Order ();
-          order -> recipieIndex = i;
-          orderQue.add ( order );
+          orderQue.add ( new int ( i ) );
         }
       }
     }
@@ -82,7 +76,7 @@ void clearRecentRecipie () {
   if ( millisSinceInterrupt > BUTTON_SENSITIVITY_MILLIS ) {
     
     if ( ! orderQue.isEmpty () ) {
-      Order * order = orderQue.removeMostRecent ();
+      int * order = orderQue.removeMostRecent ();
       delete order;
     }
     
@@ -91,14 +85,28 @@ void clearRecentRecipie () {
 }
 
 
-void processOrder () {
-
+const int * getNextOrder () {
+  
   if ( !orderQue.isEmpty () ) {
   
-    Order * order = orderQue.remove ();
+    int * order = orderQue.peek ();
     
     if ( order != NULL ) {
-      executeRecipie ( DRINK_RECIPIES [ order -> recipieIndex ] );
+      return ( DRINK_RECIPIES [ *( order ) ] );
+    }
+  }
+  
+  return NULL;
+}
+
+void orderProcessed () {
+  
+  if ( !orderQue.isEmpty () ) {
+    
+    int * order = orderQue.remove ();
+    
+    if ( order != NULL ) {
+      delete order;
     }
   }
 }
@@ -109,9 +117,8 @@ void orderControlDemo () {
 
   if ( previousQueueSize != orderQue.size () ) {
     #if defined( SOFTWARE_DEBUG )
-      Serial.println ( "Que Size changed: " );
+      Serial.print ( "Que Size: " );
       Serial.println ( orderQue.size () );
-      orderQue.print ();
     #endif
   }
 
