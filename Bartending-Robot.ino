@@ -39,8 +39,8 @@ void setup() {
     builtInLedState = !builtInLedState;
     digitalWrite ( LED_BUILTIN, builtInLedState );
     
-    Serial.print ( "Current pump satus: " );
-    Serial.println ( globalPumpStatus );
+//    Serial.print ( "Current pump satus: " );
+//    Serial.println ( globalPumpStatus );
   }
 #endif
 
