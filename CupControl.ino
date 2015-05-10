@@ -1,5 +1,4 @@
 #include <Adafruit_NeoPixel.h>
-//#include <avr/power.h>
 
 #define  END_SWITCH_PIN              8
 #define  HOME_SWITCH_PIN             9
@@ -31,13 +30,15 @@ void setupCupController() {
   pinMode ( END_SWITCH_PIN, INPUT );
   pinMode ( HOME_SWITCH_PIN, INPUT );
   attachInterrupt ( END_SWITCH_PIN, limitSwitchStateChanged, CHANGE );
-  attachInterrupt ( HOME_SWITCH_PIN, homeSwitchStateChanged, CHANGE );
+  attachInterrupt ( HOME_SWITCH_PIN, limitSwitchStateChanged, CHANGE );
+//  attachInterrupt ( HOME_SWITCH_PIN, homeSwitchStateChanged, CHANGE );
   
   pinMode ( DISPENSER_DIRECTION_PIN, OUTPUT ); 
   pinMode ( DISPENSER_STEP_PIN, OUTPUT ); 
 
   rgbLeds.begin();
   
+  goToEnd ();
   goToHome ();
   goToEnd ();
   moveDispenserHead ( ( maximumNumberOfSteps / 2 ), DIR_TO_HOME );
@@ -57,6 +58,7 @@ void limitSwitchStateChanged () {
   else {
     interruptWaiting = false;
     if ( limitSwitchTimeSinceLastInterrupt >= BUTTON_SENSITIVITY ) {
+      
       if ( digitalRead ( END_SWITCH_PIN ) == LOW ) { // Button Pressed
         stopMotorMovement = true;
         isAtEnd = true;
@@ -65,19 +67,7 @@ void limitSwitchStateChanged () {
       else {
         isAtEnd = false;
       }
-      limitSwitchTimeSinceLastInterrupt = 0;
-    }
-  }
-}
 
-elapsedMillis homeSwitchTimeSinceLastInterrupt = 0;
-void homeSwitchStateChanged () {
-  if ( inStep ) {
-    interruptWaiting = true; // Let the stepper know that there is interrupt in wait
-  }
-  else {
-    interruptWaiting = false;
-    if ( homeSwitchTimeSinceLastInterrupt >= BUTTON_SENSITIVITY ) {
       if ( digitalRead ( HOME_SWITCH_PIN ) == LOW ) { // Button Pressed
         stopMotorMovement = true;
         isAtHome = true;
@@ -86,7 +76,8 @@ void homeSwitchStateChanged () {
       else {
         isAtHome = false;
       }
-      homeSwitchTimeSinceLastInterrupt = 0;
+      
+      limitSwitchTimeSinceLastInterrupt = 0;
     }
   }
 }
