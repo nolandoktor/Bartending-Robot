@@ -63,10 +63,12 @@ void loop() {
         orderProcessed ();
       }
     }
+    else {
+      goToNextCupPosition ();
+    }
   }
   
 //  markCupEmpty ( 0 );
-  
 //  orderControlDemo ();
 //  pumpControlDemo ();
 
