@@ -34,13 +34,16 @@ void setup() {
 
 #if defined( USE_DEBUG_LED )
   bool builtInLedState = HIGH;
-  
+  unsigned int previousPumpState = 1;
   void debugLedTimerRoutine () {
     builtInLedState = !builtInLedState;
     digitalWrite ( LED_BUILTIN, builtInLedState );
-    
-//    Serial.print ( "Current pump satus: " );
-//    Serial.println ( globalPumpStatus );
+
+    if ( previousPumpState != globalPumpStatus ) {
+      Serial.print ( "Current pump satus: " );
+      Serial.println ( globalPumpStatus );
+    }
+    previousPumpState = globalPumpStatus;
   }
 #endif
 
@@ -51,14 +54,20 @@ void loop() {
     const int * recipie = getNextOrder ();
     
     if ( recipie != NULL ) {
-      runPumpsFor ( PUMP_COUNT, recipie );
-      orderProcessed ();
+      
+      if ( goToNextCupPosition () ) {
+        
+        // if ( isCupPresent () )
+
+        runPumpsFor ( recipie );
+        orderProcessed ();
+      }
     }
   }
   
-  markCupEmpty ( 0 );
+//  markCupEmpty ( 0 );
   
-  orderControlDemo ();
+//  orderControlDemo ();
 //  pumpControlDemo ();
 
 }

@@ -60,19 +60,19 @@ int runningPumpsCount () {
   return returnValue;
 }
 
-void runPumpsFor ( int numberOfPumps, const int forSeconds [] ) {
+void runPumpsFor ( const int forSeconds [] ) {
   
   botTimer.end ();
   
   #if defined( SOFTWARE_DEBUG )
     Serial.print ( "Running Pumps for: " );
-    for ( int i = 0; i < numberOfPumps; i ++ ) {
+    for ( int i = 0; i < PUMP_COUNT; i ++ ) {
       Serial.print ( forSeconds [ i ] );
     }
     Serial.println ( "." );
   #endif
   
-  for ( int i = 0; i < numberOfPumps; i ++ ) {
+  for ( int i = 0; i < PUMP_COUNT; i ++ ) {
     runPump ( i, forSeconds [ i ] );
   }
 
@@ -86,7 +86,7 @@ void pumpControlDemo () {
   int pumpTimes [] = { 1, 2, 3, 4, 5, 6 };
   
   if ( millisSinceLastDemoRun > 10000  ) {
-    runPumpsFor ( PUMP_COUNT, pumpTimes );
+    runPumpsFor ( pumpTimes );
     millisSinceLastDemoRun = 0;
   }
 }

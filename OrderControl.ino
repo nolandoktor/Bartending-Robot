@@ -15,25 +15,6 @@ const int DRINK_RECIPIES [ NUMBER_OF_RECIPIES ] [ PUMP_COUNT ] = {
   { 0, 2, 5, 0, 1, 4 },
 };
 
-//typedef struct {
-//  int recipieIndex;
-//  String toString ();
-//} Order;
-//
-//String Order :: toString () {
-//  String str = "Recipie #: ";
-//  str += recipieIndex;
-//  str += " { ";
-//  for ( int i = 0; i < PUMP_COUNT; i ++ ) {
-//    if ( i > 0 ) {
-//      str += ", ";
-//    }
-//    str += DRINK_RECIPIES [ recipieIndex ] [ i ];
-//  }
-//  str += " }";
-//  return str;
-//}
-
 BarvizQueue <int> orderQue ( ORDER_QUEUE_SIZE );
 
 void setupOrderController () {
