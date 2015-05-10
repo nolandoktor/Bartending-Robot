@@ -7,7 +7,7 @@
 #define  DISPENSER_DIRECTION_PIN     10
 #define  DISPENSER_STEP_PIN          11
 #define  NUMBER_OF_STEPS_PER_REV     200
-#define  MAXIMUM_NUMBER_OF_STEPS     7800 // 7864, 7961, 7953, 7838
+//#define  MAXIMUM_NUMBER_OF_STEPS     7800 // 7864, 7961, 7953, 7838
 
 #define  DIR_TO_HOME  LOW
 #define  DIR_TO_END   HIGH
@@ -43,52 +43,55 @@ void setupCupController() {
   moveDispenserHead ( ( maximumNumberOfSteps / 2 ), DIR_TO_HOME );
 }
 
-#define STEPPER_MOTOR_DELAY_MICRO_SECS  500
-#define BUTTON_SENSITIVITY_MICROS  STEPPER_MOTOR_DELAY_MICRO_SECS
+#define STEPPER_MOTOR_DELAY_MICRO_SECS  250
+#define BUTTON_SENSITIVITY              5 
 
-elapsedMicros limitSwitchTimeSinceLastInterrupt = 0;
+bool inStep = false;
+bool interruptWaiting = false;
+
+elapsedMillis limitSwitchTimeSinceLastInterrupt = 0;
 void limitSwitchStateChanged () {
-  cli ();
-  if ( limitSwitchTimeSinceLastInterrupt >= BUTTON_SENSITIVITY_MICROS ) {
-    if ( digitalRead ( END_SWITCH_PIN ) == LOW ) { // Button Pressed
-      stopMotorMovement = true;
-      isAtEnd = true;
-      maximumNumberOfSteps = dispenserCurrentPosition;
-    }
-    else {
-      isAtEnd = false;
-    }
-    limitSwitchTimeSinceLastInterrupt = 0;
+  if ( inStep ) {
+    interruptWaiting = true; // Let the stepper know that there is interrupt in wait
   }
-  sei ();
+  else {
+    interruptWaiting = false;
+    if ( limitSwitchTimeSinceLastInterrupt >= BUTTON_SENSITIVITY ) {
+      if ( digitalRead ( END_SWITCH_PIN ) == LOW ) { // Button Pressed
+        stopMotorMovement = true;
+        isAtEnd = true;
+        maximumNumberOfSteps = dispenserCurrentPosition;
+      }
+      else {
+        isAtEnd = false;
+      }
+      limitSwitchTimeSinceLastInterrupt = 0;
+    }
+  }
 }
 
-elapsedMicros homeSwitchTimeSinceLastInterrupt = 0;
+elapsedMillis homeSwitchTimeSinceLastInterrupt = 0;
 void homeSwitchStateChanged () {
-  cli ();
-  if ( homeSwitchTimeSinceLastInterrupt >= BUTTON_SENSITIVITY_MICROS ) {
-    if ( digitalRead ( HOME_SWITCH_PIN ) == LOW ) { // Button Pressed
-      stopMotorMovement = true;
-      isAtHome = true;
-      dispenserCurrentPosition = 0;
-    }
-    else {
-      isAtHome = false;
-    }
-    homeSwitchTimeSinceLastInterrupt = 0;
+  if ( inStep ) {
+    interruptWaiting = true; // Let the stepper know that there is interrupt in wait
   }
-  sei ();
+  else {
+    interruptWaiting = false;
+    if ( homeSwitchTimeSinceLastInterrupt >= BUTTON_SENSITIVITY ) {
+      if ( digitalRead ( HOME_SWITCH_PIN ) == LOW ) { // Button Pressed
+        stopMotorMovement = true;
+        isAtHome = true;
+        dispenserCurrentPosition = 0;
+      }
+      else {
+        isAtHome = false;
+      }
+      homeSwitchTimeSinceLastInterrupt = 0;
+    }
+  }
 }
 
 unsigned int moveDispenserHead ( unsigned int steps, int direction ) {
-  
-  if ( isAtHome && direction == DIR_TO_HOME ) {
-    return 0;
-  }
-  
-  if ( isAtEnd && direction == DIR_TO_END ) {
-    return 0;
-  }
   
   int delta = 1;
   if ( direction == DIR_TO_HOME ) {
@@ -101,26 +104,30 @@ unsigned int moveDispenserHead ( unsigned int steps, int direction ) {
   
   while ( !stopMotorMovement && ( stepsTaken < steps ) ) {
     
-    cli ();
+    inStep = true;
     digitalWrite ( DISPENSER_STEP_PIN, HIGH );
     digitalWrite ( DISPENSER_STEP_PIN, LOW );
     stepsTaken ++;
     dispenserCurrentPosition += delta;
-    sei ();
+    inStep = false;
 
-    delayMicroseconds ( STEPPER_MOTOR_DELAY_MICRO_SECS ); // To prevent motor from stalling
+    if ( interruptWaiting ) {
+      delay ( STEPPER_MOTOR_DELAY_MICRO_SECS ); // Wait in milliSeconds, whenever any of the limit-switch triggers
+    }
+    else {
+      delayMicroseconds ( STEPPER_MOTOR_DELAY_MICRO_SECS ); // To prevent motor from stalling
+    }
   }
   
-  if ( isAtHome && ( direction == DIR_TO_END ) && ( stepsTaken > 0 ) ) {
-    isAtHome = false;
+  if ( stepsTaken > 0 ) {
+    if ( direction == DIR_TO_END && isAtHome ) {
+      isAtHome = false;
+    }
+    if ( direction == DIR_TO_HOME && isAtEnd ) {
+      isAtEnd = false;
+    }
   }
   
-  if ( isAtEnd && ( direction == DIR_TO_HOME ) && ( stepsTaken > 0 ) ) {
-    isAtEnd = false;
-  }
-
-  stopMotorMovement = false; // reset the movement flag.  Let the limit/home triggers handle the setting part
-
   return stepsTaken;
 }
 
@@ -135,9 +142,11 @@ void goToHome () {
   
   unsigned int stepsTaken = 0;
   while ( isAtHome == false ) {
-    stepsTaken += moveDispenserHead ( MAXIMUM_NUMBER_OF_STEPS, DIR_TO_HOME );
+    stepsTaken += moveDispenserHead ( NUMBER_OF_STEPS_PER_REV, DIR_TO_HOME );
   }
   
+  stopMotorMovement = false; // reset the movement flag.  Let the limit/home triggers handle the setting part
+
   #if defined( SOFTWARE_DEBUG )
     Serial.print ( "Reached Home: [" );
     Serial.print ( isAtHome );
@@ -153,9 +162,11 @@ void goToEnd () {
 
   unsigned int stepsTaken = 0;
   while ( isAtEnd == false ) {
-    stepsTaken += moveDispenserHead ( MAXIMUM_NUMBER_OF_STEPS, DIR_TO_END );
+    stepsTaken += moveDispenserHead ( NUMBER_OF_STEPS_PER_REV, DIR_TO_END );
   }
   
+  stopMotorMovement = false; // reset the movement flag.  Let the limit/home triggers handle the setting part
+
   #if defined( SOFTWARE_DEBUG )
     Serial.print ( "Reached Limit: [" );
     Serial.print ( isAtHome );
@@ -169,11 +180,6 @@ void goToEnd () {
 
 void goToCup ( int cupPos ) {
   
-  #if defined( SOFTWARE_DEBUG )
-    Serial.print ( "Trying to reach cup Position: " );
-    Serial.println ( cupPos );
-  #endif
-  
   goToHome ();
   
   int cupPositionLength = maximumNumberOfSteps / ( CUP_POSITIONS + 1 );
@@ -181,7 +187,7 @@ void goToCup ( int cupPos ) {
   unsigned int stepsTaken = moveDispenserHead ( steps, DIR_TO_END );
 
   #if defined( SOFTWARE_DEBUG )
-    Serial.print ( "Now at Cup Poistion: [" );
+    Serial.print ( "Cup Poistion: [" );
     Serial.print ( isAtHome );
     Serial.print ( isAtEnd );
     Serial.print ( "] - " );

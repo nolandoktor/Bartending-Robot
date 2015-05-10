@@ -32,7 +32,6 @@ void setupOrderController () {
 #define BUTTON_SENSITIVITY_MILLIS  300
 
 elapsedMillis millisSinceInterrupt = 0;
-
 void menuButtonPinChanged () {
   
   if ( millisSinceInterrupt > BUTTON_SENSITIVITY_MILLIS ) {

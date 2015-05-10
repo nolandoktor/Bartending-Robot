@@ -63,9 +63,9 @@ void loop() {
         orderProcessed ();
       }
     }
-    else {
-      goToNextCupPosition ();
-    }
+//    else {
+//      goToNextCupPosition ();
+//    }
   }
   
 //  markCupEmpty ( 0 );
