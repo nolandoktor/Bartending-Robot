@@ -14,67 +14,48 @@ template <typename T> class BarvizQueue {
     BarvizQueue ( const unsigned int );
     ~BarvizQueue ();
     
-    bool add ( T * );
-    T * remove ();
-    T * peek () const;
-    T * removeMostRecent ();
+    bool add ( const T & );
+    bool remove ( T & );
+    bool peek ( T & ) const;
+    bool removeMostRecent ( T & );
+    int  asArray ( T *, unsigned int ) const;
     
     bool isEmpty () const;
     bool isFull () const;
     int size () const;
     
   private:
-    typedef struct Node {
-      T * item;
-      Node * next;
-      Node * prev;
-    } Node;
-    
-    Node * head;
-    Node * tail;
-
-    Print * printer;
+    T * array;
+    int head;
+    int tail;
 };
 
 template <typename T> BarvizQueue<T> :: BarvizQueue ( const unsigned int maxCapacity) {
   this -> capacity = maxCapacity;
   this -> currSize = 0;
-  this -> head = NULL;
-  this -> tail = NULL;
+  this -> array = new T [ this -> capacity ];
+  this -> head = -1;
+  this -> tail = -1;
 }
 
 template <typename T> BarvizQueue<T> :: ~BarvizQueue () {
-
-  for (Node * ptr = this -> head; ptr != NULL; ptr = ptr -> next) {
-    delete ptr;
-  }
-
   this -> currSize = 0;
-  this -> head = NULL;
-  this -> tail = NULL;
 }
 
-template <typename T> bool BarvizQueue<T> :: add ( T * element ) {
+template <typename T> bool BarvizQueue<T> :: add ( const T & element ) {
   
   bool returnValue = false;
 
   if ( currSize < capacity ) {  
-    
-  	Node * ptr = new Node ();
-  
-  	ptr -> item = element;
-  	ptr -> next = NULL;
-  	ptr -> prev = NULL;
-    
-    if ( this -> head == NULL ) { // tail should be NULL too, in this case
-      this -> head = this -> tail = ptr;
+    if ( this -> currSize == 0 ) {
+      // First Element getting into the Queue, reset all indices
+      this -> head = this -> tail = 0;
     }
     else {
-      ptr -> prev = tail;
-      this -> tail -> next = ptr;
-      this -> tail = ptr;
+      this -> tail = ( this -> tail + 1 ) % this -> capacity; 
     }
     
+    this -> array [ this -> tail ] = element;
     this -> currSize ++;
     
     returnValue = true;
@@ -95,67 +76,62 @@ template <typename T> int BarvizQueue<T> :: size () const {
   return this -> currSize;
 }
 
-template <typename T> T * BarvizQueue<T> :: remove () {
+template <typename T> bool BarvizQueue<T> :: remove ( T & removedElement ) {
 
-  T * returnValue = NULL;
+  bool returnValue = false;
   
   if (!isEmpty ()) {
-
-    returnValue = this -> head -> item;
-    
-    Node * ptr = this -> head;
-
-    this -> head = this -> head -> next;
-    delete ptr;
-    
-    if ( this -> head != NULL ) {
-      this -> head -> prev = NULL;
-    }
-    else { // make tail NULL as well
-      this -> tail = NULL;
-    }
-    
+    T temp = this -> array [ this -> head ];
+    this -> head = ( this -> head  + 1 ) % this -> capacity;
     this -> currSize --;
+    returnValue = true;
+    removedElement = temp;
   }
   
   return returnValue;
 }
 
-template <typename T> T * BarvizQueue<T> :: peek () const {
+template <typename T> bool BarvizQueue<T> :: peek ( T & peekedElement ) const {
 
-  T * returnValue = NULL;
+  bool returnValue = false;
 
   if ( !isEmpty () ) {
-    returnValue = this -> head -> item;
+    peekedElement = this -> array [ this -> head ];
+    returnValue = true;
   }
   
   return returnValue;
 }
 
-template <typename T> T * BarvizQueue<T> :: removeMostRecent () {
+template <typename T> bool BarvizQueue<T> :: removeMostRecent ( T & removedElement ) {
 
-  T * returnValue = NULL;
+  bool returnValue = false;
   
   if (!isEmpty ()) {
-
-    returnValue = this -> tail -> item;
-    
-    Node * ptr = this -> tail;
-
-    this -> tail = this -> tail -> prev;
-    delete ptr;
-    
-    if ( this -> tail != NULL ) {
-      this -> tail -> next = NULL;
-    }
-    else { // make head NULL as well
-      this -> head = NULL;
-    }
-    
+    T temp = this -> array [ this -> tail ];
+    this -> tail = ( this -> tail + ( this -> capacity - 1 ) ) % this -> capacity;
     this -> currSize --;
+    returnValue = true;
+    removedElement = temp;
   }
   
   return returnValue;
+}
+
+template <typename T> int BarvizQueue<T> :: asArray ( T * destArray, unsigned int maxElements ) const {
+
+  int copiedElements = 0;
+  
+  if ( !isEmpty () ) {
+    int iter = this -> head;
+    while ( ( copiedElements < maxElements ) && ( copiedElements < this -> currSize ) ) {
+      destArray [ copiedElements ] = this -> array [ iter ];
+      copiedElements ++;
+      iter = ( iter + 1 ) % this -> capacity;
+    }
+  }
+  
+  return copiedElements;  
 }
 
 #endif // _BARVIZ_QUEUE_H

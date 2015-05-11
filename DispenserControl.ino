@@ -4,6 +4,10 @@
 #define  DISPENSER_DIRECTION_PIN     10
 #define  DISPENSER_STEP_PIN          11
 #define  NUMBER_OF_STEPS_PER_REV     200
+
+const int cupDetectionPins [ CUP_POSITIONS ] = { 14, 15, 16, 17 };
+const unsigned int cupSteps [ CUP_POSITIONS ] = { 1408, 2928, 4422, 5918 };
+
 //#define  MAXIMUM_NUMBER_OF_STEPS     7800 // 7864, 7961, 7953, 7838
 
 #define  DIR_TO_HOME  LOW
@@ -14,19 +18,47 @@ bool isAtHome = false;
 int maximumNumberOfSteps = 0;
 int dispenserCurrentPosition = 0;
 
+bool cupPresence [ CUP_POSITIONS ] = { false };
+
 void setupDispenserController() {
   
   pinMode ( END_SWITCH_PIN, INPUT );
   pinMode ( HOME_SWITCH_PIN, INPUT );
   
-  pinMode ( DISPENSER_DIRECTION_PIN, OUTPUT ); 
-  pinMode ( DISPENSER_STEP_PIN, OUTPUT ); 
+  pinMode ( DISPENSER_DIRECTION_PIN, OUTPUT );
+  pinMode ( DISPENSER_STEP_PIN, OUTPUT );
+  
+  for ( int i = 0; i < CUP_POSITIONS; i ++ ) {
+    pinMode ( cupDetectionPins [ i ], INPUT );
+    attachInterrupt ( cupDetectionPins [ i ], cupDetectionSwitchChanged, CHANGE );
+  }
 
-  goToEnd ();
   goToHome ();
   goToEnd ();
-  maximumNumberOfSteps = dispenserCurrentPosition;
-  moveDispenserHead ( ( maximumNumberOfSteps / 2 ), DIR_TO_HOME );
+  moveDispenserHead ( maximumNumberOfSteps / 2, DIR_TO_HOME );
+
+  for ( int i = 0; i < CUP_POSITIONS; i ++ ) {
+    showCupStatusBlinky ( i, cupPresence [ i ] );
+  }
+}
+
+void cupDetectionSwitchChanged () {
+  
+  for ( int i = 0; i < CUP_POSITIONS; i ++ ) {
+    cupPresence [ i ] = ( digitalRead ( cupDetectionPins [ i ] ) == LOW );
+  }
+  
+  for ( int i = 0; i < CUP_POSITIONS; i ++ ) {
+    showCupStatusBlinky ( i, cupPresence [ i ] );
+  }
+  
+//  #if defined( SOFTWARE_DEBUG )
+//    Serial.print ( "Cup Detection: [" );
+//    for ( int j = 0; j < CUP_POSITIONS; j ++ ) {
+//      Serial.print ( cupPresence [ j ] );
+//    }
+//    Serial.println ( "]" );
+//  #endif
 }
 
 #define STEPPER_MOTOR_DELAY_MICRO_SECS  250
@@ -83,8 +115,6 @@ unsigned int moveDispenserHead ( unsigned int steps, int direction ) {
   return stepsTaken;
 }
 
-int currCupPosition = -1;
-
 void goToHome () {
   
   unsigned int stepsTaken = 0;
@@ -121,43 +151,49 @@ void goToEnd () {
   #endif
 }
 
-void goToCup ( int cupPos ) {
-  
-  goToHome ();
-  
-  moveDispenserHead ( dispenserCurrentPosition - 50, DIR_TO_HOME );
-  
-  int cupPositionLength = maximumNumberOfSteps / ( CUP_POSITIONS + 1 );
-  int steps = cupPositionLength * ( cupPos + 1 );
-  unsigned int stepsTaken = moveDispenserHead ( steps, DIR_TO_END );
+bool inMotion = false;
+bool goToCupPosition ( unsigned int cupPos ) {
 
-  #if defined( SOFTWARE_DEBUG )
-    Serial.print ( "Cup Poistion: [" );
-    Serial.print ( isAtHome );
-    Serial.print ( isAtEnd );
-    Serial.print ( "] - " );
-    Serial.print ( cupPos );
-    Serial.print ( " - at position: " );
-    Serial.print ( dispenserCurrentPosition );
-    Serial.print ( " - after taking steps: " );
-    Serial.println ( stepsTaken );
-  #endif
+  if ( cupPos >= 0 && cupPos <= CUP_POSITIONS ) {
+    if ( !inMotion ) {
+      inMotion = true;
+      goToHome ();
+
+      unsigned int stepsTaken = moveDispenserHead ( cupSteps [ cupPos ], DIR_TO_END );
+    
+      #if defined( SOFTWARE_DEBUG )
+        Serial.print ( "Cup Poistion: [" );
+        Serial.print ( isAtHome );
+        Serial.print ( isAtEnd );
+        Serial.print ( "] - " );
+        Serial.print ( cupPos );
+        Serial.print ( " - at position: " );
+        Serial.print ( dispenserCurrentPosition );
+        Serial.print ( " - after taking steps: " );
+        Serial.println ( stepsTaken );
+      #endif
+      
+      inMotion = false;
+      return true;
+    }
+  }
+  
+  return false;
 }
 
-bool inMotion = false;
-bool goToNextCupPosition () {
-
-  if ( !inMotion ) {
-    inMotion = true;
-
-    currCupPosition = ( currCupPosition + 1 ) % CUP_POSITIONS;
-    goToCup ( currCupPosition );
-    
-    inMotion = false;
-    return true;
+int getDispenserPositionAtCup () {
+  int returnValue = -1;
+  for ( int i = 0; i < CUP_POSITIONS; i ++ ) {
+    int difference = dispenserCurrentPosition - cupSteps [ i ];
+    if ( abs ( difference ) <= 2 ) {
+      returnValue = i;
+      break;
+    }
   }
-  else {
-    return false;
-  }
+  return returnValue;
+}
+
+bool isCupDetected ( unsigned int cupId ) {
+  return ( digitalRead ( cupDetectionPins [ cupId ] ) == LOW );
 }
 

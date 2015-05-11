@@ -19,3 +19,4 @@ removeMostRecent	KEYWORD2
 isEmpty	KEYWORD2
 isFull	KEYWORD2
 size	KEYQORD2
+asArray	KEYWORD2

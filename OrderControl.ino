@@ -41,9 +41,8 @@ void menuButtonPinChanged () {
       boolean value = ( digitalRead ( buttonPins [ i ] ) == LOW );
       
       if ( value == true ) {
-        if ( !orderQue.isFull () ) {
-          orderQue.add ( new int ( i ) );
-        }
+        orderQue.add ( i );
+        showOrderStatusBlinky ();
       }
     }
   
@@ -55,11 +54,10 @@ void clearRecentRecipie () {
 
   if ( millisSinceInterrupt > BUTTON_SENSITIVITY_MILLIS ) {
     
-    if ( ! orderQue.isEmpty () ) {
-      int * order = orderQue.removeMostRecent ();
-      delete order;
-    }
-    
+    int order;
+    orderQue.removeMostRecent ( order );
+    showOrderStatusBlinky ();
+
     millisSinceInterrupt = 0;
   }
 }
@@ -68,10 +66,9 @@ const int * getNextOrder () {
   
   if ( !orderQue.isEmpty () ) {
   
-    int * order = orderQue.peek ();
-    
-    if ( order != NULL ) {
-      return ( DRINK_RECIPIES [ *( order ) ] );
+    int order;
+    if ( orderQue.peek ( order ) ) {
+      return ( DRINK_RECIPIES [ order ] );
     }
   }
   
@@ -82,15 +79,27 @@ void orderProcessed () {
   
   if ( !orderQue.isEmpty () ) {
     
-    int * order = orderQue.remove ();
-    
-    if ( order != NULL ) {
-      delete order;
-    }
+    int order;
+    orderQue.remove ( order );
   }
+  
+  showOrderStatusBlinky ();
 }
 
 int getOrderQueSize () {
   return orderQue.size ();
 }
+
+int * getOrderQueStatus ( int * statusArray, int maxQueSize ) {
+
+  int queSize = orderQue.asArray ( statusArray, maxQueSize );
+  
+  for ( int i = queSize; i < maxQueSize; i ++ ) {
+      statusArray [ i ] = -1;
+  }
+  
+  return statusArray;
+}
+
+
 

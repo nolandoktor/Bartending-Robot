@@ -18,19 +18,33 @@ void setupPumpConroller () {
   }  
 }
 
+volatile unsigned int pumpsStatus = 0;
+
 void runPump ( int pumpID, int timeInSecs ) {
   
   if ( timeInSecs > 0 ) {
     digitalWrite ( pumpPins [ pumpID ], LOW );
     pumpRunningTime [ pumpID ] = timeInSecs;
-    globalPumpStatus |= ( 0x1 << pumpID ); 
+    pumpsStatus |= ( 0x1 << pumpID ); 
   }
+
+  showPumpStatus ( isPumpRunning () );
 }
 
 void turnOffPump ( int pumpID ) {
   digitalWrite ( pumpPins [ pumpID ], HIGH );
-  globalPumpStatus &= ~( 0x1 << pumpID ); 
+  pumpsStatus &= ~( 0x1 << pumpID ); 
+  showPumpStatus ( isPumpRunning () );
 }
+
+bool isPumpRunning () {
+  return ( pumpsStatus != 0 );
+}
+
+unsigned int getCurrentPumpStatus () {
+  return pumpsStatus;
+}
+
 
 void OneSecondTimer () {
   
