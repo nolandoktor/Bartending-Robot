@@ -64,7 +64,6 @@ void clearRecentRecipie () {
   }
 }
 
-
 const int * getNextOrder () {
   
   if ( !orderQue.isEmpty () ) {
@@ -91,17 +90,7 @@ void orderProcessed () {
   }
 }
 
-int previousQueueSize = -1;
-
-void orderControlDemo () {
-
-  if ( previousQueueSize != orderQue.size () ) {
-    #if defined( SOFTWARE_DEBUG )
-      Serial.print ( "Que Size: " );
-      Serial.println ( orderQue.size () );
-    #endif
-  }
-
-  previousQueueSize = orderQue.size();
+int getOrderQueSize () {
+  return orderQue.size ();
 }
 

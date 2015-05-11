@@ -79,15 +79,4 @@ void runPumpsFor ( const int forSeconds [] ) {
   botTimer.begin ( OneSecondTimer, 1000000 );
 }
 
-elapsedMillis millisSinceLastDemoRun = 0;
-
-void pumpControlDemo () {
-  
-  int pumpTimes [] = { 1, 2, 3, 4, 5, 6 };
-  
-  if ( millisSinceLastDemoRun > 10000  ) {
-    runPumpsFor ( pumpTimes );
-    millisSinceLastDemoRun = 0;
-  }
-}
 

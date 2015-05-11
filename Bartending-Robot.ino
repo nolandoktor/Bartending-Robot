@@ -29,7 +29,8 @@ void setup() {
 
   setupPumpConroller ();
   setupOrderController ();
-  setupCupController ();
+  setupDispenserController ();
+  setupBlinkyController ();
 }
 
 #if defined( USE_DEBUG_LED )
@@ -49,6 +50,9 @@ void setup() {
 
 void loop() {
 
+  showPumpStatus ( globalPumpStatus != 0 );
+  showOrderQueue ( 0, getOrderQueSize () );
+    
   if ( globalPumpStatus == 0 ) {
 
     const int * recipie = getNextOrder ();
@@ -63,13 +67,8 @@ void loop() {
         orderProcessed ();
       }
     }
-//    else {
-//      goToNextCupPosition ();
-//    }
   }
-  
-//  markCupEmpty ( 0 );
-//  orderControlDemo ();
-//  pumpControlDemo ();
 
 }
+
+
