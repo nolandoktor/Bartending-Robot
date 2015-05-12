@@ -1,8 +1,8 @@
 #define  END_SWITCH_PIN              8
 #define  HOME_SWITCH_PIN             9
 
-#define  DISPENSER_DIRECTION_PIN     10
-#define  DISPENSER_STEP_PIN          11
+#define  DISPENSER_DIRECTION_PIN     11
+#define  DISPENSER_STEP_PIN          12
 #define  NUMBER_OF_STEPS_PER_REV     200
 
 const int cupDetectionPins [ CUP_POSITIONS ] = { 14, 15, 16, 17 };

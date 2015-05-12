@@ -1,6 +1,6 @@
 #include <Adafruit_NeoPixel.h>
 
-#define  LED_PIN    12
+#define  LED_PIN    10
 #define  LED_COUNT  ( CUP_POSITIONS * 2 ) + 2
 
 #define  LED_ON    4
