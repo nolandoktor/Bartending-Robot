@@ -1,5 +1,5 @@
-#define  END_SWITCH_PIN              8
-#define  HOME_SWITCH_PIN             9
+#define  END_SWITCH_PIN              9
+#define  HOME_SWITCH_PIN             8
 
 #define  DISPENSER_DIRECTION_PIN     11
 #define  DISPENSER_STEP_PIN          12
@@ -194,6 +194,7 @@ int getDispenserPositionAtCup () {
 }
 
 bool isCupDetected ( unsigned int cupId ) {
-  return ( digitalRead ( cupDetectionPins [ cupId ] ) == LOW );
+  return true;
+//  return ( digitalRead ( cupDetectionPins [ cupId ] ) == LOW );
 }
 

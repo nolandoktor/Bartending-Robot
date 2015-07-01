@@ -2,6 +2,7 @@
 
 #define NUMBER_OF_BUTTONS  8
 #define NUMBER_OF_RECIPIES NUMBER_OF_BUTTONS - 1
+#define CANCEL_ORDER_PIN   NUMBER_OF_RECIPIES
 
 const int buttonPins [ NUMBER_OF_BUTTONS ] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
@@ -25,8 +26,8 @@ void setupOrderController () {
     attachInterrupt ( buttonPins [ i ], menuButtonPinChanged, CHANGE );
   }
   
-  pinMode ( buttonPins [ NUMBER_OF_BUTTONS - 1 ], INPUT_PULLUP );
-  attachInterrupt ( buttonPins [ i ], clearRecentRecipie, CHANGE );
+  pinMode ( buttonPins [ CANCEL_ORDER_PIN ], INPUT_PULLUP );
+  attachInterrupt ( buttonPins [ CANCEL_ORDER_PIN ], clearRecentRecipie, CHANGE );
 }
 
 #define BUTTON_SENSITIVITY_MILLIS  300
@@ -42,7 +43,12 @@ void menuButtonPinChanged () {
       
       if ( value == true ) {
         orderQue.add ( i );
-        showOrderStatusBlinky ();
+        
+        #if defined( SOFTWARE_DEBUG )
+          Serial.print ( "Order Added: " );
+          orderQue.print ( Serial );
+        #endif
+
       }
     }
   
@@ -54,10 +60,22 @@ void clearRecentRecipie () {
 
   if ( millisSinceInterrupt > BUTTON_SENSITIVITY_MILLIS ) {
     
-    int order;
-    orderQue.removeMostRecent ( order );
-    showOrderStatusBlinky ();
+    boolean value = ( digitalRead ( buttonPins [ CANCEL_ORDER_PIN ] ) == LOW );
+    
+    if ( value == true ) {
+      
+      int order;
 
+      if ( orderQue.removeMostRecent ( order ) ) {
+        #if defined( SOFTWARE_DEBUG )
+          Serial.print ( "Order Removed: " );
+          Serial.print ( order );
+          Serial.print ( " - " );
+          orderQue.print ( Serial );
+        #endif
+      }
+    }
+    
     millisSinceInterrupt = 0;
   }
 }
@@ -68,6 +86,14 @@ const int * getNextOrder () {
   
     int order;
     if ( orderQue.peek ( order ) ) {
+      
+      #if defined( SOFTWARE_DEBUG )
+        Serial.print ( "Get Next Order returns: " );
+        Serial.print ( order );
+        Serial.print ( " - " );
+        orderQue.print ( Serial );
+      #endif
+      
       return ( DRINK_RECIPIES [ order ] );
     }
   }
@@ -80,10 +106,16 @@ void orderProcessed () {
   if ( !orderQue.isEmpty () ) {
     
     int order;
-    orderQue.remove ( order );
-  }
-  
-  showOrderStatusBlinky ();
+    if  ( orderQue.remove ( order ) ) {
+      
+      #if defined( SOFTWARE_DEBUG )
+        Serial.print ( "Order Processed: " );
+        Serial.print ( order );
+        Serial.print ( " - " );
+        orderQue.print ( Serial );
+      #endif
+    }
+  }  
 }
 
 int getOrderQueSize () {

@@ -18,11 +18,12 @@ template <typename T> class BarvizQueue {
     bool remove ( T & );
     bool peek ( T & ) const;
     bool removeMostRecent ( T & );
-    int  asArray ( T *, unsigned int ) const;
     
+    int  asArray ( T *, unsigned int ) const;
     bool isEmpty () const;
     bool isFull () const;
-    int size () const;
+    int  size () const;
+    void print ( Print & printer );
     
   private:
     T * array;
@@ -132,6 +133,28 @@ template <typename T> int BarvizQueue<T> :: asArray ( T * destArray, unsigned in
   }
   
   return copiedElements;  
+}
+
+
+template <typename T> void BarvizQueue<T> :: print ( Print & printer ) {
+  
+  printer.print ( "Que Status: [ " );
+  printer.print ( this -> currSize );
+  printer.print ( " ] - { " );
+  
+  if ( !isEmpty () ) {
+
+    int iter = this -> head;
+    for ( int counter = 0; counter < this -> currSize; counter ++ ) {
+      if ( counter > 0 ) {
+      	printer.print ( ", " );
+      }
+      printer.print ( this -> array [ iter ] );
+      iter = ( iter + 1 ) % this -> capacity;
+    }
+  }
+  
+  printer.println ( " }" );
 }
 
 #endif // _BARVIZ_QUEUE_H
