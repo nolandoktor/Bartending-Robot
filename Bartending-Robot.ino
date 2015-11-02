@@ -1,3 +1,5 @@
+#include <ArduinoJson.h>
+
 #include <SoftwareSerial.h>
 
 // comment the following define statement to shut the built-in LED off
@@ -66,7 +68,7 @@ void setup() {
   debugLedTimer.begin ( debugLedTimerRoutine, 250000 );
 #endif
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   delay(2000);// Give reader a chance to see the output.
 
   setupPumpConroller ();
@@ -116,58 +118,109 @@ void processCommand ( String cmd ) {
   Serial.println ( cmd );
 #endif
 
-//TODO: Add barvis control logic here
-//  if ( cmd.startsWith ( "BLE:" ) ) {
-//    String blinkyCmd = cmd.substring ( 4 );
-//    setBlinky ( !blinkyCmd.compareTo ( "ON" ) );
-//  }
-}
-
-#define WAIT_DELAY_FOR_CUP_DETECTION  250
-void loop() {
-    
-  if ( bleSerial.available() ) {
-    String bleCommand = bleSerial.readString ();
-    Serial.println ( bleCommand );
-    processCommand ( bleCommand );
-  }
-  else {
-    if (Serial.available())  {
-      String serialCommand = Serial.readString();
-      if ( serialCommand.startsWith ( "AT" ) ) {
-        sendAtCommand ( serialCommand );
-      }
-      else {
-        processCommand ( serialCommand );
-      }
-    }
-  }
-
-
-  //  if ( !isPumpRunning () ) {
-  //
-  //    const int * recipie = getNextOrder ();
-  //
-  //    if ( recipie != NULL ) {
-  //
-  //      int currentDispenserHeadAt = getDispenserPositionAtCup ();
-  //
-  //      if ( currentDispenserHeadAt != currCupPosition ) {
-  //        goToCupPosition ( currCupPosition );
-  //      }
-  //
-  //      while ( !isCupDetected ( currCupPosition ) ) { // wait for the cup to be placed
-  //        delay ( WAIT_DELAY_FOR_CUP_DETECTION );
-  //      }
-  //
-  //      if ( isCupDetected ( currCupPosition ) ) {
-  //        runPumpsFor ( recipie );
-  //        orderProcessed ();
-  //
-  //        incrementCupPoistion ();
-  //      }
-  //    }
+  //TODO: Add barvis control logic here
+  //  if ( cmd.startsWith ( "BLE:" ) ) {
+  //    String blinkyCmd = cmd.substring ( 4 );
+  //    setBlinky ( !blinkyCmd.compareTo ( "ON" ) );
   //  }
 }
 
+/*
+ * JSON Structure for Barvis Commands
+ * {
+ *  "type" : { "AT" | "PUMP" | "SET" },
+ *  "at_cmd" : "<ATCMD>",
+ *  "run_pumps" : [ { "pump_id" : <pumpID>, "run_for" : <runForUnits> }, ...  ]
+ *  "set" : [ { "key" : "value" }, { "key2" : "value2" } ... ]
+ * }
+ *
+ */
 
+StaticJsonBuffer<1024> jsonBuffer;
+#define WAIT_DELAY_FOR_CUP_DETECTION  250
+
+PumpOperation pumpOperations [ PUMP_COUNT ];
+
+void loop() {
+
+  String commandJson = "";
+  if ( bleSerial.available() ) {
+    commandJson = bleSerial.readString ();
+  }
+  else if (Serial.available())  {
+    commandJson = Serial.readString();
+  }
+
+  if ( commandJson != "" ) {
+
+#if defined( SOFTWARE_DEBUG )
+    Serial.println ( commandJson );
+#endif
+
+    JsonObject & jsonObject = jsonBuffer.parseObject(commandJson);
+
+    if (jsonObject.success()) {
+
+      String cmdType = jsonObject [ "type" ];
+
+      if ( cmdType != "" ) {
+        if ( cmdType == "PUMP" ) {
+          JsonArray& runPumpsArray = jsonObject [ "run_pumps" ].asArray();
+          int cmdLength = runPumpsArray.size();
+          for ( JsonArray::iterator it=runPumpsArray.begin(); it!=runPumpsArray.end(); ++it) {
+            JsonObject & pumpConfig = it -> asObject ();
+            byte id = (byte) pumpConfig [ "pump_id" ];
+            byte duration = (byte) pumpConfig [ "run_for" ];
+            pumpOperations [ id ].pumpId = id;
+            pumpOperations [ id ].runForSeconds = duration;
+          }
+//          processCommand ( "" );
+            runPumpsFor ( pumpOperations, cmdLength );        
+        }
+        else if ( cmdType == "SET" ) {
+          //TODO: // ChangeSettings method here
+        }
+        else if ( cmdType == "AT" ) {
+          String atCommand = jsonObject [ "at_cmd" ];
+          sendAtCommand ( atCommand );
+        }
+      }
+    }
+    else {
+#if defined( SOFTWARE_DEBUG )
+      Serial.println("parseObject() failed");
+#endif
+
+    }
+
+/*
+
+*/
+
+
+    //  if ( !isPumpRunning () ) {
+    //
+    //    const int * recipie = getNextOrder ();
+    //
+    //    if ( recipie != NULL ) {
+    //
+    //      int currentDispenserHeadAt = getDispenserPositionAtCup ();
+    //
+    //      if ( currentDispenserHeadAt != currCupPosition ) {
+    //        goToCupPosition ( currCupPosition );
+    //      }
+    //
+    //      while ( !isCupDetected ( currCupPosition ) ) { // wait for the cup to be placed
+    //        delay ( WAIT_DELAY_FOR_CUP_DETECTION );
+    //      }
+    //
+    //      if ( isCupDetected ( currCupPosition ) ) {
+    //        runPumpsFor ( recipie );
+    //        orderProcessed ();
+    //
+    //        incrementCupPoistion ();
+    //      }
+    //    }
+    //  }
+  }
+}
