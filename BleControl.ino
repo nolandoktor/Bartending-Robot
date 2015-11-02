@@ -40,14 +40,14 @@ void sendAtCommand ( String cmd ) {
   bleSerial.print ( cmd );
   bleSerial.flush ();
 
-  while ( !bleSerial.find ( (char *) "OK" ) ) {
-#if defined( SOFTWARE_DEBUG )
-    Serial.println ( "." );
-#endif
-  }
+//  while ( !bleSerial.find ( `(char *) "OK" ) ) {
+//#if defined( SOFTWARE_DEBUG )
+//    Serial.print ( "." );
+//#endif
+//  }
 
 #if defined( SOFTWARE_DEBUG )
-  Serial.println ( " .. OK" );
+//  Serial.println ( " .. OK" );
   Serial.println ( bleSerial.readString () );
 #endif
 

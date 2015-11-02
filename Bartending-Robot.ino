@@ -75,6 +75,7 @@ void setup() {
   setupOrderController ();
   setupDispenserController ();
   setupBlinkyController ();
+  setupBleControl ();
 }
 
 #if defined( USE_DEBUG_LED )
@@ -159,23 +160,51 @@ void loop() {
 
     JsonObject & jsonObject = jsonBuffer.parseObject(commandJson);
 
+#if defined( SOFTWARE_DEBUG )
+    Serial.println ( "After the parsing line" );
+#endif
+
     if (jsonObject.success()) {
 
+#if defined( SOFTWARE_DEBUG )
+    Serial.println ( "JSON parsing is successfull" );
+#endif
       String cmdType = jsonObject [ "type" ];
 
       if ( cmdType != "" ) {
+
+#if defined( SOFTWARE_DEBUG )
+    Serial.println ( "CMD Type: " + cmdType );
+#endif
         if ( cmdType == "PUMP" ) {
+
+#if defined( SOFTWARE_DEBUG )
+    Serial.println ( "Getting Pump Data" );
+#endif
           JsonArray& runPumpsArray = jsonObject [ "run_pumps" ].asArray();
           int cmdLength = runPumpsArray.size();
+
+#if defined( SOFTWARE_DEBUG )
+    Serial.print  ( "Total Pumps command Size is: " );
+    Serial.println ( cmdLength );
+#endif
+          int i = 0;
           for ( JsonArray::iterator it=runPumpsArray.begin(); it!=runPumpsArray.end(); ++it) {
             JsonObject & pumpConfig = it -> asObject ();
             byte id = (byte) pumpConfig [ "pump_id" ];
             byte duration = (byte) pumpConfig [ "run_for" ];
-            pumpOperations [ id ].pumpId = id;
-            pumpOperations [ id ].runForSeconds = duration;
+#if defined( SOFTWARE_DEBUG )
+    Serial.print  ( "Pump ID: " );
+    Serial.print ( id );
+    Serial.print ( ", Duration: " );
+    Serial.println ( duration );
+#endif
+            pumpOperations [ i ].pumpId = id;
+            pumpOperations [ i ].runForSeconds = duration;
+            i ++;
           }
 //          processCommand ( "" );
-            runPumpsFor ( pumpOperations, cmdLength );        
+            runPumpsFor ( pumpOperations, cmdLength );
         }
         else if ( cmdType == "SET" ) {
           //TODO: // ChangeSettings method here
@@ -192,10 +221,6 @@ void loop() {
 #endif
 
     }
-
-/*
-
-*/
 
 
     //  if ( !isPumpRunning () ) {
@@ -223,4 +248,5 @@ void loop() {
     //    }
     //  }
   }
+  
 }
