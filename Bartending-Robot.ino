@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 // comment the following define statement to shut the built-in LED off
 #define USE_DEBUG_LED      1
 
@@ -9,12 +11,26 @@
 #define CUP_POSITIONS      ORDER_QUEUE_SIZE
 
 // ------------- PUMP Control Functions Start ---------------- //
+struct PumpOperation {
+  byte pumpId;
+  byte runForSeconds;
+};
+
 void setupPumpConroller ();
 void showPumpStatus ();
 bool isPumpRunning ();
 unsigned int getCurrentPumpStatus ();
+void runPumpsFor ( PumpOperation * pumpOps, int count );
 // -------------  PUMP Control Functions End  ---------------- //
 
+// ------------   BLE Control Functions Start ---------------- //
+const int bleRxPin = 0;
+const int bleTxPin = 1;
+SoftwareSerial bleSerial ( bleRxPin, bleTxPin ); // RX, TX
+
+void setupBleControl();
+void sendAtCommand ( String cmd );
+// ------------   BLE Control Functions End   ---------------- //
 
 // ----------- Order Control Functions Start ----------------- //
 void setupOrderController ();
@@ -39,21 +55,19 @@ void setupBlinkyController ();
 
 
 #if defined( USE_DEBUG_LED )
-  IntervalTimer debugLedTimer;
+IntervalTimer debugLedTimer;
 #endif
 
 void setup() {
-  
+
   // Debug LED setup
 #if defined( USE_DEBUG_LED )
   pinMode ( LED_BUILTIN, OUTPUT );
   debugLedTimer.begin ( debugLedTimerRoutine, 250000 );
 #endif
-  
-#if defined( SOFTWARE_DEBUG )
+
   Serial.begin(9600);
   delay(2000);// Give reader a chance to see the output.
-#endif
 
   setupPumpConroller ();
   setupOrderController ();
@@ -62,22 +76,22 @@ void setup() {
 }
 
 #if defined( USE_DEBUG_LED )
-  bool builtInLedState = HIGH;
-  unsigned int previousPumpState = 0xFFFF;
+bool builtInLedState = HIGH;
+unsigned int previousPumpState = 0xFFFF;
 
-  void debugLedTimerRoutine () {
-    builtInLedState = !builtInLedState;
-    digitalWrite ( LED_BUILTIN, builtInLedState );
-    
-    #if defined( SOFTWARE_DEBUG )
-      unsigned int currStatus = getCurrentPumpStatus ();
-      if ( previousPumpState != currStatus ) {
-        Serial.print ( "Current pump satus: " );
-        Serial.println ( currStatus );
-      }
-      previousPumpState = currStatus;
-    #endif
+void debugLedTimerRoutine () {
+  builtInLedState = !builtInLedState;
+  digitalWrite ( LED_BUILTIN, builtInLedState );
+
+#if defined( SOFTWARE_DEBUG )
+  unsigned int currStatus = getCurrentPumpStatus ();
+  if ( previousPumpState != currStatus ) {
+    Serial.print ( "Current pump satus: " );
+    Serial.println ( currStatus );
   }
+  previousPumpState = currStatus;
+#endif
+}
 #endif
 
 int currCupPosition = 0;
@@ -95,33 +109,65 @@ void showCupStatusBlinky ( int cupId, bool isPresent ) {
   showCupStatus ( cupId, isPresent );
 }
 
+void processCommand ( String cmd ) {
+
+#if defined( SOFTWARE_DEBUG )
+  Serial.print ( "Processing: " );
+  Serial.println ( cmd );
+#endif
+
+//TODO: Add barvis control logic here
+//  if ( cmd.startsWith ( "BLE:" ) ) {
+//    String blinkyCmd = cmd.substring ( 4 );
+//    setBlinky ( !blinkyCmd.compareTo ( "ON" ) );
+//  }
+}
+
 #define WAIT_DELAY_FOR_CUP_DETECTION  250
 void loop() {
-
-  if ( !isPumpRunning () ) {
-
-    const int * recipie = getNextOrder ();
     
-    if ( recipie != NULL ) {
-      
-      int currentDispenserHeadAt = getDispenserPositionAtCup ();
-      
-      if ( currentDispenserHeadAt != currCupPosition ) {
-        goToCupPosition ( currCupPosition );
+  if ( bleSerial.available() ) {
+    String bleCommand = bleSerial.readString ();
+    Serial.println ( bleCommand );
+    processCommand ( bleCommand );
+  }
+  else {
+    if (Serial.available())  {
+      String serialCommand = Serial.readString();
+      if ( serialCommand.startsWith ( "AT" ) ) {
+        sendAtCommand ( serialCommand );
       }
-      
-      while ( !isCupDetected ( currCupPosition ) ) { // wait for the cup to be placed
-        delay ( WAIT_DELAY_FOR_CUP_DETECTION );
-      }
-      
-      if ( isCupDetected ( currCupPosition ) ) {
-        runPumpsFor ( recipie );
-        orderProcessed ();
-        
-        incrementCupPoistion ();
+      else {
+        processCommand ( serialCommand );
       }
     }
   }
+
+
+  //  if ( !isPumpRunning () ) {
+  //
+  //    const int * recipie = getNextOrder ();
+  //
+  //    if ( recipie != NULL ) {
+  //
+  //      int currentDispenserHeadAt = getDispenserPositionAtCup ();
+  //
+  //      if ( currentDispenserHeadAt != currCupPosition ) {
+  //        goToCupPosition ( currCupPosition );
+  //      }
+  //
+  //      while ( !isCupDetected ( currCupPosition ) ) { // wait for the cup to be placed
+  //        delay ( WAIT_DELAY_FOR_CUP_DETECTION );
+  //      }
+  //
+  //      if ( isCupDetected ( currCupPosition ) ) {
+  //        runPumpsFor ( recipie );
+  //        orderProcessed ();
+  //
+  //        incrementCupPoistion ();
+  //      }
+  //    }
+  //  }
 }
 
 
