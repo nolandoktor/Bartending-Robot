@@ -1,5 +1,3 @@
-#include <ArduinoJson.h>
-
 #include <SoftwareSerial.h>
 
 // comment the following define statement to shut the built-in LED off
@@ -65,7 +63,7 @@ void setup() {
   // Debug LED setup
 #if defined( USE_DEBUG_LED )
   pinMode ( LED_BUILTIN, OUTPUT );
-  debugLedTimer.begin ( debugLedTimerRoutine, 250000 );
+  debugLedTimer.begin ( debugLedTimerRoutine, 500000 );
 #endif
 
   Serial.begin(115200);
@@ -112,107 +110,94 @@ void showCupStatusBlinky ( int cupId, bool isPresent ) {
   showCupStatus ( cupId, isPresent );
 }
 
-void processCommand ( String cmd ) {
-
-#if defined( SOFTWARE_DEBUG )
-  Serial.print ( "Processing: " );
-  Serial.println ( cmd );
-#endif
-
-  //TODO: Add barvis control logic here
-  //  if ( cmd.startsWith ( "BLE:" ) ) {
-  //    String blinkyCmd = cmd.substring ( 4 );
-  //    setBlinky ( !blinkyCmd.compareTo ( "ON" ) );
-  //  }
-}
-
 /*
- * JSON Structure for Barvis Commands
- * {
- *  "type" : { "AT" | "PUMP" | "SET" },
- *  "at_cmd" : "<ATCMD>",
- *  "run_pumps" : [ { "pump_id" : <pumpID>, "run_for" : <runForUnits> }, ...  ]
- *  "set" : [ { "key" : "value" }, { "key2" : "value2" } ... ]
- * }
- *
- */
+   Command Structure
+   CMD -> AT|PUMP|SET
+   AT -> "AT":<ATCMD>
+   PUMP -> "PUMP":PUMP_OP
+   PUMP_OP -> <ID>=<TIME>,PUMP_OP*
+   SET -> "SET":SETTING
+   SETTING -> <KEY>=<VALUE>,SETTING*
+   ----------------------------------
+   JSON Structure for Barvis Commands
+   {
+    "type" : { "AT" | "PUMP" | "SET" },
+    "at_cmd" : "<ATCMD>",
+    "run_pumps" : [ { "pump_id" : <pumpID>, "run_for" : <runForUnits> }, ...  ]
+    "set" : [ { "key" : "value" }, { "key2" : "value2" } ... ]
+   }
 
-StaticJsonBuffer<1024> jsonBuffer;
+*/
+
 #define WAIT_DELAY_FOR_CUP_DETECTION  250
-
-PumpOperation pumpOperations [ PUMP_COUNT ];
 
 void loop() {
 
-  String commandJson = "";
+  String command = "";
   if ( bleSerial.available() ) {
-    commandJson = bleSerial.readString ();
+    command = bleSerial.readString ();
   }
   else if (Serial.available())  {
-    commandJson = Serial.readString();
+    command = Serial.readString();
   }
 
-  if ( commandJson != "" ) {
+  if ( command != "" ) {
 
 #if defined( SOFTWARE_DEBUG )
-    Serial.println ( commandJson );
+    Serial.println ( command );
 #endif
 
-    JsonObject & jsonObject = jsonBuffer.parseObject(commandJson);
+    // PUMP:1=2,2=3,3=4,4=5,5=6,6=7,
+    
+    int cmdIndex = command.indexOf ( ':' );
+    String cmdType = command.substring ( 0, cmdIndex ).trim();
 
-#if defined( SOFTWARE_DEBUG )
-    Serial.println ( "After the parsing line" );
-#endif
-
-    if (jsonObject.success()) {
-
-#if defined( SOFTWARE_DEBUG )
-    Serial.println ( "JSON parsing is successfull" );
-#endif
-      String cmdType = jsonObject [ "type" ];
-
-      if ( cmdType != "" ) {
-
-#if defined( SOFTWARE_DEBUG )
-    Serial.println ( "CMD Type: " + cmdType );
-#endif
-        if ( cmdType == "PUMP" ) {
-
-#if defined( SOFTWARE_DEBUG )
-    Serial.println ( "Getting Pump Data" );
-#endif
-          JsonArray& runPumpsArray = jsonObject [ "run_pumps" ].asArray();
-          int cmdLength = runPumpsArray.size();
-
-#if defined( SOFTWARE_DEBUG )
-    Serial.print  ( "Total Pumps command Size is: " );
-    Serial.println ( cmdLength );
-#endif
-          int i = 0;
-          for ( JsonArray::iterator it=runPumpsArray.begin(); it!=runPumpsArray.end(); ++it) {
-            JsonObject & pumpConfig = it -> asObject ();
-            byte id = (byte) pumpConfig [ "pump_id" ];
-            byte duration = (byte) pumpConfig [ "run_for" ];
-#if defined( SOFTWARE_DEBUG )
-    Serial.print  ( "Pump ID: " );
-    Serial.print ( id );
-    Serial.print ( ", Duration: " );
-    Serial.println ( duration );
-#endif
-            pumpOperations [ i ].pumpId = id;
-            pumpOperations [ i ].runForSeconds = duration;
-            i ++;
-          }
-//          processCommand ( "" );
-            runPumpsFor ( pumpOperations, cmdLength );
+    if ( cmdType != "" ) {
+      if ( cmdType == "PUMP" ) {
+        
+        int startIndex = cmdIndex;
+        int endIndex = command.indexOf ( ',', startIndex );
+        int totalCommands = 0;
+        
+        while ( endIndex != -1 ) {
+          startIndex = endIndex + 1;
+          endIndex = command.indexOf ( ',', startIndex );
+          totalCommands ++;
         }
-        else if ( cmdType == "SET" ) {
-          //TODO: // ChangeSettings method here
+
+        PumpOperation * pumpOperations = new PumpOperation [ totalCommands ];
+        startIndex = cmdIndex + 1;
+        endIndex = command.indexOf ( ',', startIndex );
+        int i = 0;
+        while ( endIndex != -1 ) {
+          String pumpOp = command.substring ( startIndex, endIndex );
+          int opSeparator = pumpOp.indexOf ( '=' );
+          int id = pumpOp.substring ( 0, opSeparator ).toInt();
+          int duration = pumpOp.substring ( opSeparator + 1 ).toInt ();
+
+#if defined( SOFTWARE_DEBUG )
+            Serial.print  ( "Pump ID: " );
+            Serial.print ( id );
+            Serial.print ( ", Duration: " );
+            Serial.println ( duration );
+#endif
+
+          pumpOperations [ i ].pumpId = id;
+          pumpOperations [ i ].runForSeconds = duration;
+          i ++;
+          startIndex = endIndex + 1;
+          endIndex = command.indexOf ( ',', startIndex );
         }
-        else if ( cmdType == "AT" ) {
-          String atCommand = jsonObject [ "at_cmd" ];
-          sendAtCommand ( atCommand );
-        }
+        
+        runPumpsFor ( pumpOperations, totalCommands );
+        delete pumpOperations;
+      }
+      else if ( cmdType == "SET" ) {
+        //TODO: // ChangeSettings method here
+      }
+      else if ( cmdType == "AT" ) {
+        String atCommand = command.substring ( cmdIndex + 1 );
+        sendAtCommand ( atCommand );
       }
     }
     else {
@@ -248,5 +233,4 @@ void loop() {
     //    }
     //  }
   }
-  
 }

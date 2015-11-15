@@ -27,6 +27,7 @@ volatile unsigned int pumpsStatus = 0;
 
 void runPump ( int pumpID, int timeInSecs ) {
 
+  if ( pumpID >= 0 && pumpID < PUMP_COUNT ) {
 #if defined( SOFTWARE_DEBUG )
   Serial.print ( "Running Pumps: " );
   Serial.print ( pumpID );
@@ -34,18 +35,25 @@ void runPump ( int pumpID, int timeInSecs ) {
   Serial.println ( timeInSecs );
 #endif
 
-  if ( timeInSecs > 0 ) {
-    digitalWrite ( pumpPins [ pumpID ], LOW );
-    pumpRunningTime [ pumpID ] = timeInSecs;
-    pumpsStatus |= ( 0x1 << pumpID );
-  }
+    if ( timeInSecs > 0 ) {
+      digitalWrite ( pumpPins [ pumpID ], LOW );
+      pumpRunningTime [ pumpID ] = timeInSecs;
+      pumpsStatus |= ( 0x1 << pumpID );
+    }
 
 #if defined( SOFTWARE_DEBUG )
   Serial.print ( "Current Pump Status: " );
   Serial.println ( pumpsStatus, HEX );
 #endif
 
-  showPumpStatus ( isPumpRunning () );
+    showPumpStatus ( isPumpRunning () );
+  }
+  else {
+#if defined( SOFTWARE_DEBUG )
+  Serial.print ( pumpID );
+  Serial.println ( " is invalid Pump ID" );
+#endif
+  }
 }
 
 void turnOffPump ( int pumpID ) {
@@ -106,17 +114,7 @@ void runPumpsFor ( PumpOperation * pumpOps, int count ) {
 #endif
   for ( int i = 0; i < count; i ++ ) {
     runPump ( pumpOps [ i ].pumpId, pumpOps [ i ].runForSeconds );
-#if defined( SOFTWARE_DEBUG )
-    Serial.print ( pumpOps [ i ].pumpId );
-    Serial.print ( "[" );
-    Serial.print ( pumpOps [ i ].runForSeconds );
-    Serial.print ( "] " );
-#endif
   }
-#if defined( SOFTWARE_DEBUG )
-  Serial.println ( "." );
-#endif
-
 //  for ( int i = 0; i < PUMP_COUNT; i ++ ) {
 //    runPump ( i, forSeconds [ i ] );
 //  }
